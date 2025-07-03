@@ -94,5 +94,5 @@ RUN curl -L "${GCM_URL}" \
 COPY fedora41_AArch64_dev_entrypoint.sh /usr/libexec/entrypoint
 RUN chmod +x /usr/libexec/entrypoint \
     && cp /etc/skel/.bashrc /root/.bashrc
-
+# test
 ENTRYPOINT ["/usr/libexec/entrypoint"]
