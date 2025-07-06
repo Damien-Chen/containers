@@ -11,13 +11,12 @@ name: "Fedora 41 AArch64 Images"
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
-    paths:
-      - 'Fedora-41-AArch64/**'
+    branches: [ "*" ]       # Trigger on push to any branch
+    paths: [ "**" ]         # Trigger on changes to any file
+
   pull_request:
-    branches: [ main ]
-    paths:
-      - 'Fedora-41-AArch64/**'
+    branches: [ "*" ]       # Trigger on PR to any branch
+    paths: [ "**" ]         # Trigger on changes to any file
 
 jobs:
   Build_Image:
