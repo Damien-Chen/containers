@@ -65,7 +65,6 @@ RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
         make \
         nuget \
         nasm \
-        https://github.com/PowerShell/PowerShell/releases/download/v${POWERSHELL_VERSION}/powershell-${POWERSHELL_VERSION}-1.cm.aarch64.rpm \
         python3 \
         python3-distutils-extra \
         python3-pip \
@@ -118,7 +117,6 @@ RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
 # This image is intended for local use. This builds on the test image but adds
 # tools for local developers.
 FROM test AS dev
-ENV GCM_LINK=https://github.com/GitCredentialManager/git-credential-manager/releases/download/v2.6.1/gcm-osx-arm64-2.6.1.tar.gz
 RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
     dnf \
       --assumeyes \
@@ -134,13 +132,7 @@ RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
         vim \
         nano
 
-# Setup the git credential manager for developer credentials.
-RUN curl -L "${GCM_LINK}" | tar -xz -C /usr/local/bin
-RUN git-credential-manager-core configure
-RUN git config --global credential.credentialStore cache
-RUN cp /etc/skel/.bashrc /root/.bashrc
-
 # Set the entry point
-COPY fedora41_dev_entrypoint.sh /usr/libexec/entrypoint
+COPY fedora41_AArch64_dev_entrypoint.sh /usr/libexec/entrypoint
 ENTRYPOINT ["/usr/libexec/entrypoint"]
 
