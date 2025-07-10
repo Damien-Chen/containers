@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2022, Red Hat, Inc.
 # Copyright (c) 2023 Loongson Technology Corporation Limited. All rights reserved.
-# Copyright (c) 2025 Damien Chen <inkfan130924783@gmai.com>. All rights reserved.
+# Copyright (c) 2025 Damien Chen <inkfan130924783@gmail.com>. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 # This file contains the definitions for images to be used for different
@@ -17,82 +17,121 @@
 # This image is intended for jobs that compile the source code and as a general
 # purpose image. It contains the toolchains for all supported architectures, and
 # all build dependencies.
-#########################################
-# Stage 1: build — compilation & tooling #
-#########################################
 FROM --platform=linux/arm64 registry.fedoraproject.org/fedora:41 AS build
 
-# update & install core build deps in one layer, then clean caches
-RUN --mount=type=cache,target=/var/cache/dnf \
-    dnf install -y \
-      python3 python3-virtualenv python3-devel python3-distutils-extra python3-pip \
-      git make gcc gcc-c++ lcov nasm tar sudo curl \
-      acpica-tools libX11-devel libXext-devel libuuid-devel \
-      libasan libubsan \
-      gcc-aarch64-linux-gnu gcc-arm-linux-gnu gcc-riscv64-linux-gnu gcc-loongarch64-linux-gnu \
-      dotnet-runtime-9.0 nodejs npm nuget \
-    && dnf clean all
+# Preinstall python + dependencies as virtual environment
+RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
+    dnf \
+      --assumeyes \
+      --nodocs \
+      --setopt=install_weak_deps=0 \
+      install \
+      python3 \
+      python3-virtualenv
+RUN virtualenv /opt/venv
+ENV VIRTUAL_ENV /opt/venv
+ENV PATH /opt/venv/bin:$PATH
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip \
+        -r "https://raw.githubusercontent.com/tianocore/edk2/master/pip-requirements.txt"
 
-# set up Python virtualenv and pip requirements
-RUN python3 -m virtualenv /opt/venv \
-    && /opt/venv/bin/pip install --upgrade pip setuptools \
-    && /opt/venv/bin/pip install --upgrade \
-         -r https://raw.githubusercontent.com/tianocore/edk2/master/pip-requirements.txt \
-         lcov_cobertura
 
-ENV VIRTUAL_ENV=/opt/venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
-# install node-based lint tools
 ARG CSPELL_VERSION=8.19.2
 ARG MARKDOWNLINT_VERSION=0.44.0
+ARG POWERSHELL_VERSION=7.5.0
+ARG DOTNET_VERSION=9.0
+RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
+    dnf \
+      --assumeyes \
+      --nodocs \
+      --setopt=install_weak_deps=0 \
+      install \
+        acpica-tools \
+        dotnet-runtime-${DOTNET_VERSION} \
+        curl \
+        gcc-c++ \
+        gcc \
+        gcc-aarch64-linux-gnu \
+        gcc-arm-linux-gnu \
+        gcc-riscv64-linux-gnu \
+        gcc-loongarch64-linux-gnu \
+        git \
+        lcov \
+        libX11-devel \
+        libXext-devel \
+        libuuid-devel \
+        libasan \
+        libubsan \
+        make \
+        nuget \
+        nasm \
+        python3 \
+        python3-distutils-extra \
+        python3-pip \
+        python3-devel \
+        nodejs \
+        npm \
+        tar \
+        sudo
+RUN alternatives --install /usr/bin/python python /usr/bin/python3 1
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip lcov_cobertura setuptools
+
+# Set toolchains prefix
+ENV GCC_AARCH64_PREFIX      /usr/bin/aarch64-linux-gnu-
+ENV GCC_ARM_PREFIX          /usr/bin/arm-linux-gnu-
+ENV GCC_RISCV64_PREFIX      /usr/bin/riscv64-linux-gnu-
+ENV GCC_LOONGARCH64_PREFIX  /usr/bin/loongarch64-linux-gnu-
+# - Also set GCC5, which is deprecated, but still in use.
+ENV GCC5_AARCH64_PREFIX     /usr/bin/aarch64-linux-gnu-
+ENV GCC5_ARM_PREFIX         /usr/bin/arm-linux-gnu-
+ENV GCC5_RISCV64_PREFIX     /usr/bin/riscv64-linux-gnu-
+ENV GCC5_LOONGARCH64_PREFIX /usr/bin/loongarch64-linux-gnu-
+
+# Tools used by build extensions.
 RUN --mount=type=cache,target=/root/.npm \
-    npm install -g cspell@${CSPELL_VERSION} markdownlint-cli@${MARKDOWNLINT_VERSION}
+    npm install -g npm \
+      cspell@${CSPELL_VERSION} \
+      markdownlint-cli@${MARKDOWNLINT_VERSION}
 
-# toolchain prefixes
-ENV GCC_AARCH64_PREFIX=/usr/bin/aarch64-linux-gnu-
-ENV GCC_ARM_PREFIX=/usr/bin/arm-linux-gnu-
-ENV GCC_RISCV64_PREFIX=/usr/bin/riscv64-linux-gnu-
-ENV GCC_LOONGARCH64_PREFIX=/usr/bin/loongarch64-linux-gnu-
-ENV GCC5_AARCH64_PREFIX=/usr/bin/aarch64-linux-gnu-
-ENV GCC5_ARM_PREFIX=/usr/bin/arm-linux-gnu-
-ENV GCC5_RISCV64_PREFIX=/usr/bin/riscv64-linux-gnu-
-ENV GCC5_LOONGARCH64_PREFIX=/usr/bin/loongarch64-linux-gnu-
+# Test Image
+# This image is intended for jobs that run tests (and possibly also build)
+# firmware images. It is based on the build image and adds Qemu for the
+# architectures under test.
 
-############################################
-# Stage 2: test — add QEMU for CI testing  #
-############################################
 FROM build AS test
+RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
+    dnf \
+      --assumeyes \
+      --nodocs \
+      --setopt=install_weak_deps=0 \
+      install \
+        qemu-system-arm \
+        qemu-system-aarch64 \
+        qemu-system-loongarch64 \
+        qemu-system-x86 \
+        qemu-system-riscv \
+        qemu-ui-gtk
 
-RUN --mount=type=cache,target=/var/cache/dnf \
-    dnf install -y \
-      qemu-system-arm qemu-system-aarch64 qemu-system-loongarch64 \
-      qemu-system-x86 qemu-system-riscv qemu-ui-gtk \
-    && dnf clean all
-
-##############################################
-# Stage 3: dev — tools for local development #
-##############################################
+# Dev Image
+# This image is intended for local use. This builds on the test image but adds
+# tools for local developers.
 FROM test AS dev
+RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
+    dnf \
+      --assumeyes \
+      --nodocs \
+      --setopt=install_weak_deps=0 \
+      install \
+        libicu \
+        clang \
+        curl \
+        lld \
+        llvm \
+        tar \
+        vim \
+        nano
 
-# install LLVM/Clang, editors and ICU
-RUN --mount=type=cache,target=/var/cache/dnf \
-    dnf install -y \
-      clang lld llvm libicu vim nano tar curl \
-    && dnf clean all
-
-# Git Credential Manager setup
-ARG GCM_VERSION=2.6.1
-ARG GCM_URL="https://github.com/GitCredentialManager/git-credential-manager/releases/download/v2.0.785/gcm-osx-arm64-${GCM_VERSION}-symbols.tar.gz"
-
-RUN curl -L "${GCM_URL}" \
-      | tar -xz -C /usr/local/bin \
-    && git-credential-manager-core configure \
-    && git config --global credential.credentialStore cache
-
-# copy and set our entrypoint
+# Set the entry point
 COPY fedora41_AArch64_dev_entrypoint.sh /usr/libexec/entrypoint
-RUN chmod +x /usr/libexec/entrypoint \
-    && cp /etc/skel/.bashrc /root/.bashrc
-# test
 ENTRYPOINT ["/usr/libexec/entrypoint"]

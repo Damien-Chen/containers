@@ -1,12 +1,3 @@
-# GitHub Actions Workflow for building and pushing Docker images
-
-# SPDX-License-Identifier: BSD-2-Clause-Patent
-
-# This workflow is intended to be called from another top-level
-# workflow. Each set of images (defined in a common Dockerfile)
-# should have a matching top-level workflow yaml file.
-
-
 name: "Build and Push images"
 
 on:
@@ -26,6 +17,12 @@ on:
         required: false
         description: "The OS used to build the docker image."
         default: "ubuntu-latest"
+      # NEW: which platforms to build for
+      platforms:
+        type: string
+        required: false
+        description: "Comma-separated list of target platforms (e.g. linux/amd64,linux/arm64)"
+        default: "linux/amd64"
 
 env:
   REGISTRY: ghcr.io
@@ -51,6 +48,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # only set up QEMU & Buildx if we're doing anything beyond plain amd64
+      - name: Register QEMU emulation (if needed)
+        if: contains(inputs.platforms, 'arm64') || contains(inputs.platforms, 'riscv64') || contains(inputs.platforms, 'loongarch64')
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
+      - name: Set up Docker Buildx
+        if: contains(inputs.platforms, ',') || inputs.platforms != 'linux/amd64'
+        uses: docker/setup-buildx-action@v3
+
       - name: Set tag
         run: echo "short_sha=$(git rev-parse --short $GITHUB_SHA)" >> $GITHUB_ENV
         shell: bash
@@ -60,8 +68,24 @@ jobs:
           cd "${IMAGE_NAME}"
           for sub in $SUB_IMAGES; do
             IMG=$(tr '[:upper:]' '[:lower:]' <<< "${REGISTRY}/${REPOSITORY}/${IMAGE_NAME}-${sub}")
-            echo "Building Image: ${IMG}:${short_sha}..."
-            docker build --target "${sub}" --tag "${IMG}:${short_sha}" -f Dockerfile .
+            echo "Building Image: ${IMG}:${short_sha} for platforms=${{ inputs.platforms }}..."
+            if [ "${{ inputs.platforms }}" = "linux/amd64" ]; then
+              # legacy single‑arch build
+              docker build \
+                --target "${sub}" \
+                --tag "${IMG}:${short_sha}" \
+                -f Dockerfile \
+                .
+            else
+              # multi‑arch via buildx
+              docker buildx build \
+                --platform "${{ inputs.platforms }}" \
+                --load \
+                --target "${sub}" \
+                --tag "${IMG}:${short_sha}" \
+                -f Dockerfile \
+                .
+            fi
           done
           docker images
         shell: bash
@@ -69,7 +93,6 @@ jobs:
       - name: Check (Linux)
         if: runner.os == 'Linux'
         run: |
-          # Only check the last sub-image in the list (for now)
           sub=${SUB_IMAGES##* }
           IMG=$(tr '[:upper:]' '[:lower:]' <<< "${REGISTRY}/${REPOSITORY}/${IMAGE_NAME}-${sub}:${short_sha}")
           echo "Launching ${IMG}..."
@@ -92,5 +115,3 @@ jobs:
             docker push "${IMG}:latest"
           done
         shell: bash
-
-
