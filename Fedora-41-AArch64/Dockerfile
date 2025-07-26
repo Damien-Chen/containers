@@ -21,16 +21,18 @@ FROM --platform=linux/arm64 registry.fedoraproject.org/fedora:41 AS build
 
 # Preinstall python + dependencies as virtual environment
 RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
+    dnf makecache && \
     dnf \
       --assumeyes \
       --nodocs \
       --setopt=install_weak_deps=0 \
       install \
       python3 \
-      python3-virtualenv
+      python3-virtualenv && \
+    dnf clean all
 RUN virtualenv /opt/venv
-ENV VIRTUAL_ENV /opt/venv
-ENV PATH /opt/venv/bin:$PATH
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip \
         -r "https://raw.githubusercontent.com/tianocore/edk2/master/pip-requirements.txt"
@@ -41,6 +43,7 @@ ARG MARKDOWNLINT_VERSION=0.44.0
 ARG POWERSHELL_VERSION=7.5.0
 ARG DOTNET_VERSION=9.0
 RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
+    dnf makecache && \ 
     dnf \
       --assumeyes \
       --nodocs \
@@ -72,21 +75,22 @@ RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
         nodejs \
         npm \
         tar \
-        sudo
+        sudo && \
+    dnf clean all
 RUN alternatives --install /usr/bin/python python /usr/bin/python3 1
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip lcov_cobertura setuptools
 
 # Set toolchains prefix
-ENV GCC_AARCH64_PREFIX      /usr/bin/aarch64-linux-gnu-
-ENV GCC_ARM_PREFIX          /usr/bin/arm-linux-gnu-
-ENV GCC_RISCV64_PREFIX      /usr/bin/riscv64-linux-gnu-
-ENV GCC_LOONGARCH64_PREFIX  /usr/bin/loongarch64-linux-gnu-
+ENV GCC_AARCH64_PREFIX      ="/usr/bin/aarch64-linux-gnu-"
+ENV GCC_ARM_PREFIX          ="/usr/bin/arm-linux-gnu-"
+ENV GCC_RISCV64_PREFIX      ="/usr/bin/riscv64-linux-gnu-"
+ENV GCC_LOONGARCH64_PREFIX  ="/usr/bin/loongarch64-linux-gnu-"
 # - Also set GCC5, which is deprecated, but still in use.
-ENV GCC5_AARCH64_PREFIX     /usr/bin/aarch64-linux-gnu-
-ENV GCC5_ARM_PREFIX         /usr/bin/arm-linux-gnu-
-ENV GCC5_RISCV64_PREFIX     /usr/bin/riscv64-linux-gnu-
-ENV GCC5_LOONGARCH64_PREFIX /usr/bin/loongarch64-linux-gnu-
+ENV GCC5_AARCH64_PREFIX     ="/usr/bin/aarch64-linux-gnu-"
+ENV GCC5_ARM_PREFIX         ="/usr/bin/arm-linux-gnu-"
+ENV GCC5_RISCV64_PREFIX     ="/usr/bin/riscv64-linux-gnu-"
+ENV GCC5_LOONGARCH64_PREFIX ="/usr/bin/loongarch64-linux-gnu-"
 
 # Tools used by build extensions.
 RUN --mount=type=cache,target=/root/.npm \
