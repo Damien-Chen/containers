@@ -34,7 +34,7 @@ RUN virtualenv /opt/venv
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip \
+    pip install --no-cache-dir --upgrade pip \
         -r "https://raw.githubusercontent.com/tianocore/edk2/master/pip-requirements.txt"
 
 
@@ -43,7 +43,7 @@ ARG MARKDOWNLINT_VERSION=0.44.0
 ARG POWERSHELL_VERSION=7.5.0
 ARG DOTNET_VERSION=9.0
 RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
-    dnf makecache && \ 
+    dnf makecache && \
     dnf \
       --assumeyes \
       --nodocs \
@@ -68,7 +68,6 @@ RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
         make \
         nuget \
         nasm \
-        python3 \
         python3-distutils-extra \
         python3-pip \
         python3-devel \
@@ -79,18 +78,18 @@ RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
     dnf clean all
 RUN alternatives --install /usr/bin/python python /usr/bin/python3 1
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip lcov_cobertura setuptools
+    pip install --no-cache-dir --upgrade pip lcov_cobertura setuptools
 
 # Set toolchains prefix
-ENV GCC_AARCH64_PREFIX      ="/usr/bin/aarch64-linux-gnu-"
-ENV GCC_ARM_PREFIX          ="/usr/bin/arm-linux-gnu-"
-ENV GCC_RISCV64_PREFIX      ="/usr/bin/riscv64-linux-gnu-"
-ENV GCC_LOONGARCH64_PREFIX  ="/usr/bin/loongarch64-linux-gnu-"
+ENV GCC_AARCH64_PREFIX="/usr/bin/aarch64-linux-gnu-"
+ENV GCC_ARM_PREFIX="/usr/bin/arm-linux-gnu-"
+ENV GCC_RISCV64_PREFIX="/usr/bin/riscv64-linux-gnu-"
+ENV GCC_LOONGARCH64_PREFIX="/usr/bin/loongarch64-linux-gnu-"
 # - Also set GCC5, which is deprecated, but still in use.
-ENV GCC5_AARCH64_PREFIX     ="/usr/bin/aarch64-linux-gnu-"
-ENV GCC5_ARM_PREFIX         ="/usr/bin/arm-linux-gnu-"
-ENV GCC5_RISCV64_PREFIX     ="/usr/bin/riscv64-linux-gnu-"
-ENV GCC5_LOONGARCH64_PREFIX ="/usr/bin/loongarch64-linux-gnu-"
+ENV GCC5_AARCH64_PREFIX="/usr/bin/aarch64-linux-gnu-"
+ENV GCC5_ARM_PREFIX="/usr/bin/arm-linux-gnu-"
+ENV GCC5_RISCV64_PREFIX="/usr/bin/riscv64-linux-gnu-"
+ENV GCC5_LOONGARCH64_PREFIX="/usr/bin/loongarch64-linux-gnu-"
 
 # Tools used by build extensions.
 RUN --mount=type=cache,target=/root/.npm \
@@ -105,6 +104,7 @@ RUN --mount=type=cache,target=/root/.npm \
 
 FROM build AS test
 RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
+    dnf makecache && \
     dnf \
       --assumeyes \
       --nodocs \
@@ -115,13 +115,15 @@ RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
         qemu-system-loongarch64 \
         qemu-system-x86 \
         qemu-system-riscv \
-        qemu-ui-gtk
+        qemu-ui-gtk && \
+    dnf clean all
 
 # Dev Image
 # This image is intended for local use. This builds on the test image but adds
 # tools for local developers.
 FROM test AS dev
 RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
+    dnf makecache && \
     dnf \
       --assumeyes \
       --nodocs \
@@ -134,7 +136,8 @@ RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
         llvm \
         tar \
         vim \
-        nano
+        nano && \
+    dnf clean all
 
 # Set the entry point
 COPY fedora41_AArch64_dev_entrypoint.sh /usr/libexec/entrypoint
