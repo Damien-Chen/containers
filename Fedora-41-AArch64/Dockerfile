@@ -54,6 +54,7 @@ RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
         curl \
         gcc-c++ \
         gcc \
+        gcc-x86_64-linux-gnu \
         gcc-aarch64-linux-gnu \
         gcc-arm-linux-gnu \
         gcc-riscv64-linux-gnu \

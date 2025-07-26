@@ -37,6 +37,9 @@ build_step() {
   build=$1
   arch=$2
   opts="TOOL_CHAIN_TAG=GCC5"
+  if [ "${arch}" = "X64" ]; then
+    opts="${opts} GCC5_X64_PREFIX=x86_64-linux-gnu-"
+  fi
   echo "-----------------------------------------------------------------------"
   echo "Building ${build} for ${arch}"
   echo "-----------------------------------------------------------------------"
