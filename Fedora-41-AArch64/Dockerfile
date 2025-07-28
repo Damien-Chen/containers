@@ -51,7 +51,7 @@ RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
         curl \
         gcc-c++ \
         gcc \
-        gcc-x86-64-linux-gnu \
+        gcc-x86_64-linux-gnu \
         gcc-aarch64-linux-gnu \
         gcc-arm-linux-gnu \
         gcc-riscv64-linux-gnu \
@@ -101,7 +101,6 @@ RUN --mount=type=cache,target=/root/.npm \
 
 FROM build AS test
 RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
-    dnf makecache && \
     dnf \
       --assumeyes \
       --nodocs \
@@ -112,15 +111,13 @@ RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
         qemu-system-loongarch64 \
         qemu-system-x86 \
         qemu-system-riscv \
-        qemu-ui-gtk && \
-    dnf clean all
+        qemu-ui-gtk
 
 # Dev Image
 # This image is intended for local use. This builds on the test image but adds
 # tools for local developers.
 FROM test AS dev
 RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
-    dnf makecache && \
     dnf \
       --assumeyes \
       --nodocs \
@@ -133,9 +130,7 @@ RUN --mount=type=cache,target=/var/cache/libdnf5,sharing=locked \
         llvm \
         tar \
         vim \
-        nano && \
-    dnf clean all
-
+        nano 
 # Set the entry point
 COPY fedora41_AArch64_dev_entrypoint.sh /usr/libexec/entrypoint
 ENTRYPOINT ["/usr/libexec/entrypoint"]
