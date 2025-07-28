@@ -78,11 +78,13 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --upgrade pip lcov_cobertura setuptools
 
 # Set toolchains prefix
+ENV GCC_X64_PREFIX          /usr/bin/x86_64-linux-gnu-
 ENV GCC_AARCH64_PREFIX      /usr/bin/aarch64-linux-gnu-
 ENV GCC_ARM_PREFIX          /usr/bin/arm-linux-gnu-
 ENV GCC_RISCV64_PREFIX      /usr/bin/riscv64-linux-gnu-
 ENV GCC_LOONGARCH64_PREFIX  /usr/bin/loongarch64-linux-gnu-
 # - Also set GCC5, which is deprecated, but still in use.
+ENV GCC5_X64_PREFIX         /usr/bin/x86_64-linux-gnu-
 ENV GCC5_AARCH64_PREFIX     /usr/bin/aarch64-linux-gnu-
 ENV GCC5_ARM_PREFIX         /usr/bin/arm-linux-gnu-
 ENV GCC5_RISCV64_PREFIX     /usr/bin/riscv64-linux-gnu-
