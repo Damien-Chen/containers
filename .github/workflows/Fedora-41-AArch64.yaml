@@ -23,7 +23,7 @@ on:
 
 jobs:
   Build_Image:
-      uses: ./.github/workflows/build-image.yaml
+      uses: ./.github/workflows/build-image-AArch64.yaml
       with:
         image_name: "Fedora-41-AArch64"
         sub_images: "build test dev"
