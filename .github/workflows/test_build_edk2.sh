@@ -43,11 +43,10 @@ build_step() {
   echo "-----------------------------------------------------------------------"
   echo "Building ${build} for ${arch}"
   echo "-----------------------------------------------------------------------"
-  stuart_setup $opts -c "${build}" -a "${arch}" 
+  stuart_setup $opts -c "${build}" -a "${arch}"
   stuart_update $opts -c "${build}" -a "${arch}"
   stuart_build $opts -c "${build}" -a "${arch}"
 }
-stuart_build -c OvmfPkg/PlatformCI/PlatformBuild.py -a X64 TOOL_CHAIN_TAG=GCC5 GCC5_X64_PREFIX=x86_64-linux-gnu-   
 #build_step "OvmfPkg/PlatformCI/PlatformBuild.py" "X64"
-#build_step "ArmVirtPkg/PlatformCI/QemuBuild.py"   "AARCH64"
+build_step "ArmVirtPkg/PlatformCI/QemuBuild.py"   "AARCH64"
 #build_step "ArmVirtPkg/PlatformCI/QemuBuild.py"   "ARM"
