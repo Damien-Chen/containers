@@ -27,4 +27,3 @@ jobs:
       with:
         image_name: "Fedora-41-AArch64"
         sub_images: "build test dev"
-        platform: "linux/arm64"
