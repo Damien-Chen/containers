@@ -36,16 +36,18 @@ python BaseTools/Edk2ToolsBuild.py -t GCC5
 build_step() {
   build=$1
   arch=$2
-  opts="TOOL_CHAIN_TAG=GCC5"
+  export TOOL_CHAIN_TAG=GCC5
   if [ "${arch}" = "X64" ]; then
-    opts="${opts} GCC5_X64_PREFIX=x86_64-linux-gnu-"
+    export GCC5_X64_PREFIX=x86_64-linux-gnu-
+  else
+    unset GCC5_X64_PREFIX
   fi
   echo "-----------------------------------------------------------------------"
   echo "Building ${build} for ${arch}"
   echo "-----------------------------------------------------------------------"
-  stuart_setup $opts -c "${build}" -a "${arch}"
-  stuart_update $opts -c "${build}" -a "${arch}"
-  stuart_build $opts -c "${build}" -a "${arch}"
+  stuart_setup -c "${build}" -a "${arch}"
+  stuart_update -c "${build}" -a "${arch}"
+  stuart_build -c "${build}" -a "${arch}"
 }
 build_step "OvmfPkg/PlatformCI/PlatformBuild.py" "X64"
 build_step "ArmVirtPkg/PlatformCI/QemuBuild.py"   "AARCH64"
