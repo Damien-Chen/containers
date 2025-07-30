@@ -36,11 +36,9 @@ python BaseTools/Edk2ToolsBuild.py -t GCC5
 build_step() {
   build=$1
   arch=$2
-  opts="-t GCC5"
+  opts="TOOL_CHAIN_TAG=GCC5"
   if [ "${arch}" = "X64" ]; then
-    export GCC5_X64_PREFIX=x86_64-linux-gnu-
-  else
-    unset GCC5_X64_PREFIX
+    opts="${opts} GCC5_X64_PREFIX=x86_64-linux-gnu-"
   fi
   echo "-----------------------------------------------------------------------"
   echo "Building ${build} for ${arch}"
