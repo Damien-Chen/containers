@@ -45,6 +45,8 @@ build_step() {
   stuart_build $opts -c "${build}" -a "${arch}"
 }
 
+export CROSS_COMPILE="/usr/bin/x86_64-linux-gnu-"
 build_step "OvmfPkg/PlatformCI/PlatformBuild.py"  "X64"
-build_step "ArmVirtPkg/PlatformCI/QemuBuild.py"   "AARCH64"
+export CROSS_COMPILE=""
+build_step "ArmVirtPkg/PlatformCI/QemuBuild.py"   "AARCH64" 
 build_step "ArmVirtPkg/PlatformCI/QemuBuild.py"   "ARM"
