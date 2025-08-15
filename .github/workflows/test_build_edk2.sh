@@ -37,9 +37,6 @@ build_step() {
   build=$1
   arch=$2
   opts="TOOL_CHAIN_TAG=GCC5"
-  if [ "${arch}" = "X64" ]; then
-    opts="${opts} GCC5_X64_PREFIX=x86_64-linux-gnu-"
-  fi
   echo "-----------------------------------------------------------------------"
   echo "Building ${build} for ${arch}"
   echo "-----------------------------------------------------------------------"
@@ -47,6 +44,9 @@ build_step() {
   stuart_update $opts -c "${build}" -a "${arch}"
   stuart_build $opts -c "${build}" -a "${arch}"
 }
-#build_step "OvmfPkg/PlatformCI/PlatformBuild.py" "X64"
+
+if [ "$(uname -m)" = "x86_64" ]; then
+  build_step "OvmfPkg/PlatformCI/PlatformBuild.py" "X64"
+fi
 build_step "ArmVirtPkg/PlatformCI/QemuBuild.py"   "AARCH64"
 build_step "ArmVirtPkg/PlatformCI/QemuBuild.py"   "ARM"
